@@ -77,7 +77,7 @@ export default credentials;
   - Interact with browser widget, click on blue button `Click here after authorizing`
 
 6. Customize styles in `style.css` file yourself.
-  - You can replace `style.css` content with `style_circle.css` to have a round pomodoro widget
+  - You can replace `style.css` content with `style_rectangle.css` to have a rectangular pomodoro widget
 
 ## Additional sound credits
 
