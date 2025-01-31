@@ -1,0 +1,121 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+
+:root {
+	/* width and height of timer container */
+	--height: 150px;
+	--width: 373px;
+
+	/* container */
+	--background-color: rgba(0, 0, 0, 0.2);
+	--background-roundness: 0;
+	--container-padding-x: 0px;
+
+	/* flexbox direction */
+	--direction: row;
+
+	/* text properties */
+	--text-color: white;
+	--font-family: "Poppins";
+
+	/* font sizes */
+	--label-font-size: 24px;
+	--time-font-size: 64px;
+	--pomo-font-size: 24px;
+
+	/* label (Work, Break) */
+	--label-space-above: 115px;
+	--label-space-left: 0;
+
+	/* time (00:00) */
+	--time-space-above: -10px;
+	--time-space-left: auto;
+
+	/* cycle counter: Pomo 0/3 */
+	--cycle-space-above: 115px;
+	--cycle-space-right: 0;
+
+	/* text outline */
+	--text-outline-color: "none";
+	--text-outline-size: 0px;
+}
+
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+body {
+	background-color: transparent;
+	font-family: var(--font-family), sans-serif;
+	font-weight: 400;
+}
+
+#timer-container {
+	height: var(--height);
+	width: var(--width);
+
+	display: grid;
+	place-items: center;
+	position: absolute;
+	transform: translate(-50%, -50%);
+	top: 50%;
+	left: 50%;
+	background-color: transparent;
+}
+
+#cd-container {
+	background: var(--background-color);
+	color: var(--text-color);
+	border-radius: var(--background-roundness);
+
+	display: flex;
+	flex-direction: var(--direction);
+	align-items: center;
+	justify-content: center;
+
+	height: 100%;
+	width: 100%;
+	z-index: 1;
+
+	padding-left: calc(var(--text-outline-size) + var(--container-padding-x));
+	padding-right: calc(var(--text-outline-size) + var(--container-padding-x));
+}
+
+#label {
+	text-align: center;
+	font-size: var(--label-font-size);
+
+	margin-top: var(--label-space-above);
+	margin-left: var(--label-space-left);
+	margin-right: auto;
+}
+
+#cd-timer {
+	position: absolute;
+
+	z-index: 3;
+	text-transform: uppercase;
+
+	font-size: var(--time-font-size);
+	margin-top: var(--time-space-above);
+	margin-left: var(--time-space-left);
+
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+#cycle-counter {
+	font-size: var(--pomo-font-size);
+	margin-top: var(--cycle-space-above);
+	margin-left: auto;
+	margin-right: var(--cycle-space-right);
+}
+
+#label,
+#cd-timer,
+#cycle-counter {
+	text-align: center;
+	-webkit-text-stroke: var(--text-outline-size) var(--text-outline-color);
+}
