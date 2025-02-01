@@ -21,8 +21,28 @@ function processResponse(status, messageID) {
 	}
 }
 
+function parseDuration(duration) {
+	let time = null;
+	if (/^\d+:\d+$/.test(duration)) {
+		let [minutes, seconds] = duration.split(":");
+		time = parseInt(minutes) * 60 + parseInt(seconds);
+	} else if (/^\d+:\d+:\d+$/.test(duration)) {
+		let [hours, minutes, seconds] = duration.split(":");
+		time =
+			parseInt(hours) * 60 * 60 +
+			parseInt(minutes) * 60 +
+			parseInt(seconds);
+	} else if (/^\d+$/.test(duration)) {
+		time = parseInt(duration); // seconds
+	}
+
+	return time;
+}
+
 function processCommand(command, message, messageID, flags) {
 	let status = null;
+	command = command.toLowerCase();
+	message = message.toLowerCase();
 	if (command === "timer") {
 		// Permission check
 		if (!(flags.broadcaster || (configs.settings.allowMods && flags.mod))) {
@@ -87,6 +107,33 @@ function processCommand(command, message, messageID, flags) {
 			// !timer goal 5
 			let goal = parseInt(message.split(" ")[1]);
 			status = pomodoro.setGoal(goal);
+		} else if (
+			message.startsWith("setwork") ||
+			message.startsWith("setworktime")
+		) {
+			// !timer setwork 600
+			let duration = message.split(" ").slice(1).join(" ");
+			duration = parseDuration(duration);
+
+			status = pomodoro.setWorkDuration(duration);
+		} else if (
+			message.startsWith("setbreak") ||
+			message.startsWith("setbreaktime")
+		) {
+			// !timer setbreak 600
+			let duration = message.split(" ").slice(1).join(" ");
+			duration = parseDuration(duration);
+
+			status = pomodoro.setBreakDuration(duration);
+		} else if (
+			message.startsWith("setlongbreak") ||
+			message.startsWith("setlongbreaktime")
+		) {
+			// !timer setlongbreak 600
+			let duration = message.split(" ").slice(1).join(" ");
+			duration = parseDuration(duration);
+
+			status = pomodoro.setLongBreakDuration(duration);
 		} else {
 			// unrecognized command
 			status = {

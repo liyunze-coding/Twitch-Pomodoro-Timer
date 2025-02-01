@@ -41,6 +41,7 @@ class Pomodoro {
 		this.goal = settings.defaultPomoNumber; // goal = number of pomodoro cycles
 		this.workTime = settings.workTime; // seconds of work time
 		this.breakTime = settings.breakTime; // seconds of break time
+		this.longBreakTime = settings.longBreakTime;
 
 		this.settings = settings; // other settings (constant)
 		this.responses = responses;
@@ -52,6 +53,7 @@ class Pomodoro {
 		this.bot = bot;
 
 		this.interval = null;
+		this.isStarting = false;
 		this.isRunning = false;
 		this.isPaused = false;
 		this.cycle = 0; // current pomodoro cycle
@@ -93,7 +95,7 @@ class Pomodoro {
 		this.controller.updateLabel(this.label);
 	}
 
-	async breaktime() {
+	async _breaktime() {
 		this.timerState = "break";
 		this.label = this.settings.breakLabel;
 		this.time = this.breakTime;
@@ -124,10 +126,10 @@ class Pomodoro {
 		this.updateDisplay();
 	}
 
-	async longBreakTime() {
+	async _longbreaktime() {
 		this.timerState = "long break";
 		this.label = this.settings.longBreakLabel;
-		this.time = this.settings.longBreakTime;
+		this.time = this.longBreakTime;
 
 		this.controller.playLongBreakSound();
 
@@ -154,7 +156,7 @@ class Pomodoro {
 		}
 	}
 
-	async worktime() {
+	async _worktime() {
 		this.timerState = "work";
 		this.label = this.settings.workLabel;
 		this.time = this.workTime;
@@ -214,6 +216,7 @@ class Pomodoro {
 		}
 
 		this.isRunning = true;
+		this.isStarting = true;
 
 		this.timerState = "start";
 		this.label = this.settings.startingLabel;
@@ -225,7 +228,7 @@ class Pomodoro {
 	}
 
 	async handleStartTimeOver() {
-		await this.worktime();
+		await this._worktime();
 		this.reset();
 		this.updateDisplay();
 	}
@@ -243,11 +246,11 @@ class Pomodoro {
 		} else if (this.cycle % this.settings.longBreakEvery === 0) {
 			this.sendMessage(this.responses.longBreakMsg);
 
-			await this.longBreakTime();
+			await this._longbreaktime();
 		} else {
 			this.sendMessage(this.responses.breakMsg);
 
-			await this.breaktime();
+			await this._breaktime();
 		}
 	}
 
@@ -258,7 +261,7 @@ class Pomodoro {
 			this.sendMessage(this.responses.finishResponse);
 		} else {
 			this.sendMessage(this.responses.workMsg);
-			await this.worktime();
+			await this._worktime();
 		}
 	}
 
@@ -269,7 +272,7 @@ class Pomodoro {
 
 		this.isRunning = true;
 
-		this.worktime();
+		this._worktime();
 
 		// start timer
 		this.interval = setInterval(async () => {
@@ -300,7 +303,7 @@ class Pomodoro {
 					await this.handleWorkTimeOver();
 				} else {
 					// break time is up
-					await this.worktime();
+					await this._worktime();
 				}
 				this.updateDisplay();
 			}
@@ -336,7 +339,7 @@ class Pomodoro {
 			// increment goal
 			this.timerState = "work";
 			this.goal++;
-			this.worktime();
+			this._worktime();
 			this.startTimer();
 
 			return response(200);
@@ -412,6 +415,44 @@ class Pomodoro {
 
 	getGoal() {
 		return this.goal;
+	}
+
+	setWorkDuration(duration) {
+		if (!isValidNum(duration)) {
+			return response(400, this.responses.goalWrong);
+		}
+
+		this.workTime = duration;
+		// if work timer hasn't started yet,
+		if (!this.isRunning || this.isStarting) {
+			this.time = duration;
+		}
+
+		this.updateDisplay();
+
+		return response(200, this.responses.commandSuccess);
+	}
+
+	setBreakDuration(duration) {
+		if (!isValidNum(duration)) {
+			return response(400, this.responses.goalWrong);
+		}
+
+		this.breakTime = duration;
+		this.updateDisplay();
+
+		return response(200, this.responses.commandSuccess);
+	}
+
+	setLongBreakDuration(duration) {
+		if (!isValidNum(duration)) {
+			return response(400, this.responses.goalWrong);
+		}
+
+		this.longBreakTime = duration;
+		this.updateDisplay();
+
+		return response(200, this.responses.commandSuccess);
 	}
 }
 
