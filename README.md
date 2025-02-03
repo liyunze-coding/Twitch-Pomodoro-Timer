@@ -1,5 +1,7 @@
 # Pomodoro Twitch widget 
 
+![Pomodoro Widget](./images/image.png)
+
 Heavily inspired by [MohFocus' timer](https://github.com/mohamed-tayeh/Minimal-Pomo-Timer) widget. 
 
 Uses [Device Code Grant Flow](https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/#device-code-grant-flow) authorization method and [ComfyJS](https://github.com/instafluff/comfyjs) library.
