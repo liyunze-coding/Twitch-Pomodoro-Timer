@@ -8,6 +8,23 @@ Uses [Device Code Grant Flow](https://dev.twitch.tv/docs/authentication/getting-
 ![HTML5 Badge](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=fff&style=for-the-badge)
 ![CSS Badge](https://img.shields.io/badge/CSS-639?logo=css&logoColor=fff&style=for-the-badge)
 
+## Commands
+
+`!timer start`: Starts work timer
+`!timer 90:00`, `!timer 1:30:00` or `!timer 5400`: Set timer to 1 hour 30 minutes
+`!timer pause`: Pause timer
+`!timer resume`: Resume timer after pausing or Finished
+`!timer reset`: Resets timer back to the beginning
+`!timer skip`: Skip the current session (work/break)
+`!timer add 50`: Add 50 seconds to the timer
+`!timer sub 50`: Reduce 50 seconds from the timer
+`!timer cycle 2`: Set the current cycle to 2
+`!timer goal 9`: Set pomodoro goal number to 9
+`!timer setwork 90:00`: Set work time to be 90 minutes
+`!timer setbreak 15:00`: Set break time to be 15 minutes
+`!timer setlongbreak 20:00`: Set long break to be 20 minutes
+`!start`: Start timer before pomodoro session starts. 
+
 ## What do I use this for?
 
 If you stream on Twitch, and want to use a pomodoro timer, use this! 

@@ -84,12 +84,9 @@ function processCommand(command, message, messageID, flags) {
 		} else if (message === "resume") {
 			// !timer resume
 			status = pomodoro.resume();
-		} else if (message === "reset") {
+		} else if (message === "reset" || message === "clear") {
 			// !timer reset
 			status = pomodoro.reset();
-		} else if (message === "stop") {
-			// !timer stop
-			status = pomodoro.stop();
 		} else if (message === "skip") {
 			// !timer skip
 			status = pomodoro.skip();
@@ -98,7 +95,15 @@ function processCommand(command, message, messageID, flags) {
 			let time = parseInt(message.split(" ")[1]);
 			let newTime = pomodoro.getTime() + time;
 
-			pomodoro.setTime(newTime);
+			status = pomodoro.setTime(newTime);
+		} else if (message.startsWith("sub")) {
+			// !timer sub 60
+			let time = parseInt(message.split(" ")[1]);
+			let newTime = pomodoro.getTime() - time;
+
+			if (newTime < 1) newTime = 1;
+
+			status = pomodoro.setTime(newTime);
 		} else if (message.startsWith("cycle")) {
 			// !timer cycle 5
 			let cycle = parseInt(message.split(" ")[1]);
