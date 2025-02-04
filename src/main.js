@@ -92,13 +92,13 @@ function processCommand(command, message, messageID, flags) {
 			status = pomodoro.skip();
 		} else if (message.startsWith("add")) {
 			// !timer add 60
-			let time = parseInt(message.split(" ")[1]);
+			let time = parseDuration(message.split(" ")[1]);
 			let newTime = pomodoro.getTime() + time;
 
 			status = pomodoro.setTime(newTime);
 		} else if (message.startsWith("sub")) {
 			// !timer sub 60
-			let time = parseInt(message.split(" ")[1]);
+			let time = parseDuration(message.split(" ")[1]);
 			let newTime = pomodoro.getTime() - time;
 
 			if (newTime < 1) newTime = 1;
