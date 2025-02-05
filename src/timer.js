@@ -222,6 +222,7 @@ class Pomodoro {
 		}
 
 		// this.isRunning = true;
+		// this.isRunning = true;
 		this.isStarting = true;
 		this._startTime();
 
