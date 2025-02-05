@@ -209,22 +209,29 @@ class Pomodoro {
 		// }
 	}
 
+	_startTime() {
+		this.timerState = "start";
+		this.label = this.settings.startingLabel;
+		this.time = this.settings.startingTime;
+	}
+
 	// !start
 	streamStart() {
 		if (this.isRunning) {
 			return response(400, this.responses.timerRunning);
 		}
 
-		this.isRunning = true;
+		// this.isRunning = true;
 		this.isStarting = true;
+		this._startTime();
 
-		this.timerState = "start";
-		this.label = this.settings.startingLabel;
-		this.time = this.settings.startingTime;
+		let status = this.startTimer();
 
-		this.startTimer();
-
-		return response(200, this.responses.streamStarting);
+		if (status.status === 200) {
+			return response(200, this.responses.streamStarting);
+		} else {
+			return status;
+		}
 	}
 
 	async handleStartTimeOver() {
@@ -272,7 +279,10 @@ class Pomodoro {
 
 		this.isRunning = true;
 
-		this._worktime();
+		if (this.timerState === "work") {
+			this._worktime();
+		} else if (this.timerState === "start") {
+		}
 
 		// start timer
 		this.interval = setInterval(async () => {
