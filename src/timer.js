@@ -215,16 +215,20 @@ class Pomodoro {
 			return response(400, this.responses.timerRunning);
 		}
 
-		this.isRunning = true;
+		// this.isRunning = true;
 		this.isStarting = true;
 
 		this.timerState = "start";
 		this.label = this.settings.startingLabel;
 		this.time = this.settings.startingTime;
 
-		this.startTimer();
+		let status = this.startTimer();
 
-		return response(200, this.responses.streamStarting);
+		if (status.status === 200) {
+			return response(200, this.responses.streamStarting);
+		} else {
+			return status;
+		}
 	}
 
 	async handleStartTimeOver() {
@@ -272,7 +276,7 @@ class Pomodoro {
 
 		this.isRunning = true;
 
-		this._worktime();
+		// this._worktime();
 
 		// start timer
 		this.interval = setInterval(async () => {
