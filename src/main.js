@@ -10,6 +10,7 @@ const pomodoro = new Pomodoro(
 	configs.obs,
 	configs.discord,
 	configs.messages,
+	configs.ads,
 	bot
 );
 

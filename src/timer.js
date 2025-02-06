@@ -1,6 +1,7 @@
 import OBSHandler from "./OBS.js";
 import discordMessage from "./discordWebhook.js";
 import controller from "./controller.js";
+import credentials from "../credentials.js";
 
 function response(status, message) {
 	return {
@@ -36,9 +37,9 @@ function formatTime(time, showHours, showHoursIf00) {
 }
 
 class Pomodoro {
-	constructor(settings, responses, obs, discord, messages, bot) {
+	constructor(settings, responses, obs, discord, messages, ads, bot) {
 		this.time = settings.workTime; // time on timer
-		this.goal = settings.defaultPomoNumber; // goal = number of pomodoro cycles
+		this.goal = settings.defaultPomoNumber * 2; // goal = number of pomodoro cycles
 		this.workTime = settings.workTime; // seconds of work time
 		this.breakTime = settings.breakTime; // seconds of break time
 		this.longBreakTime = settings.longBreakTime;
@@ -51,6 +52,7 @@ class Pomodoro {
 
 		this.controller = new controller(settings);
 		this.bot = bot;
+		this.ads = ads;
 
 		this.interval = null;
 		this.isStarting = false;
@@ -71,6 +73,8 @@ class Pomodoro {
 	}
 
 	sendMessage(message) {
+		message = message.replace("{channel}", `${credentials.channel}`);
+
 		this.bot.say(message);
 	}
 
@@ -88,8 +92,13 @@ class Pomodoro {
 	updateDisplay() {
 		this.updateTimer();
 
+		let displayCycleNum = Math.ceil(this.cycle / 2);
+		let displayGoalNum = Math.ceil(this.goal / 2);
+
 		// update cycle counter
-		this.controller.updateCycle(`Pomo ${this.cycle}/${this.goal}`);
+		this.controller.updateCycle(
+			`Pomo ${displayCycleNum}/${displayGoalNum}`
+		);
 
 		// update label
 		this.controller.updateLabel(this.label);
@@ -185,12 +194,14 @@ class Pomodoro {
 			return response(400, this.responses.notRunning);
 		}
 
+		this.controller.playBreakSound();
+
+		this.cycle = this.goal;
+
 		this.timerState = "finished";
 		this.label = this.settings.finishLabel;
 		this.isRunning = false;
 		this.stop();
-
-		this.controller.playBreakSound();
 
 		// OBS change scenes
 		if (this.obs.changeScenes) {
@@ -201,12 +212,12 @@ class Pomodoro {
 		}
 
 		// Discord notification
-		// if (this.discord.sendDiscord) {
-		// 	let message = this.discord.content;
-		// 	message = message.replace("{role}", `<@&${this.discord.roleID}>`);
+		if (this.discord.sendDiscord) {
+			let message = this.discord.content;
+			message = message.replace("{role}", `<@&${this.discord.roleID}>`);
 
-		// 	discordMessage(this.discord.webHookURL, message);
-		// }
+			discordMessage(this.discord.webHookURL, message);
+		}
 	}
 
 	_startTime() {
@@ -242,16 +253,16 @@ class Pomodoro {
 	}
 
 	async handleWorkTimeOver() {
-		// update cycle
-		this.cycle++;
-
 		// 1: cycle is up, 2: long break 3: break
-		if (this.cycle === this.goal && this.settings.noLastBreak) {
+		if (
+			(this.cycle === this.goal && this.settings.noLastBreak) ||
+			this.cycle > this.goal
+		) {
 			await this.finishTimer();
 			this.updateDisplay();
 
 			this.sendMessage(this.responses.finishResponse);
-		} else if (this.cycle % this.settings.longBreakEvery === 0) {
+		} else if (this.cycle % (this.settings.longBreakEvery * 2) === 0) {
 			this.sendMessage(this.responses.longBreakMsg);
 
 			await this._longbreaktime();
@@ -263,7 +274,7 @@ class Pomodoro {
 	}
 
 	async handleBreakTimeOver() {
-		if (this.cycle === this.goal) {
+		if (this.cycle >= this.goal) {
 			await this.finishTimer();
 			this.updateDisplay();
 			this.sendMessage(this.responses.finishResponse);
@@ -273,16 +284,23 @@ class Pomodoro {
 		}
 	}
 
+	playAd() {
+		this.sendMessage(this.ads.command);
+	}
+
 	startTimer() {
 		if (this.isRunning) {
 			return response(400, this.responses.timerRunning);
 		}
 
 		this.isRunning = true;
+		this.cycle++;
+		this.updateDisplay();
 
 		if (this.timerState === "work") {
 			this._worktime();
 		} else if (this.timerState === "start") {
+			this._startTime();
 		}
 
 		// start timer
@@ -304,8 +322,19 @@ class Pomodoro {
 				this.sendMessage(this.responses.workRemindMsg);
 			}
 
+			// do !ads command (if enabled)
+			if (
+				this.ads.enabled &&
+				this.timerState === "work" &&
+				this.time === this.ads.timeBeforeBreakStarts
+			) {
+				this.playAd();
+			}
+
 			// if time is up
-			if (this.time === 0) {
+			if (this.time <= 0) {
+				this.cycle++;
+				console.log(this.cycle, this.goal);
 				if (this.timerState === "start") {
 					// Starting time is up, work time paused.
 					await this.handleStartTimeOver();
@@ -314,8 +343,9 @@ class Pomodoro {
 					await this.handleWorkTimeOver();
 				} else {
 					// break time is up
-					await this._worktime();
+					await this.handleBreakTimeOver();
 				}
+
 				this.updateDisplay();
 			}
 		}, 1000);
@@ -402,7 +432,9 @@ class Pomodoro {
 			return response(400, this.responses.cycleWrong);
 		}
 
-		this.cycle = cycle;
+		let remainder = this.cycle % 2;
+		this.cycle = cycle * 2 - remainder;
+
 		this.updateDisplay();
 		return response(200, this.responses.commandSuccess);
 	}
@@ -419,7 +451,7 @@ class Pomodoro {
 			return response(400, this.responses.goalWrong);
 		}
 
-		this.goal = goal;
+		this.goal = goal * 2;
 		this.updateDisplay();
 		return response(200, this.responses.commandSuccess);
 	}

@@ -76,6 +76,13 @@ const configs = (function () {
 			"The stream is already starting or the timer is running!",
 	};
 
+	// Personal addition, play ads at 1:50 before break starts
+	const ads = {
+		enabled: false,
+		command: "!ads",
+		timeBeforeBreakStarts: 60 + 50,
+	};
+
 	// Discord notifications
 	const discord = {
 		sendDiscord: false, // true or false, true = sends discord ping when break starts
@@ -91,6 +98,7 @@ const configs = (function () {
 		discord,
 		obs,
 		chatBotSettings,
+		ads,
 	};
 })();
 
