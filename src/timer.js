@@ -279,7 +279,6 @@ class Pomodoro {
 			this.updateDisplay();
 			this.sendMessage(this.responses.finishResponse);
 		} else {
-			this.sendMessage(this.responses.workMsg);
 			await this._worktime();
 		}
 	}
@@ -447,7 +446,7 @@ class Pomodoro {
 		if (!isValidNum(goal)) {
 			return response(400, this.responses.goalWrong);
 		}
-		if (goal < this.cycle) {
+		if (goal * 2 < this.cycle) {
 			return response(400, this.responses.goalWrong);
 		}
 
