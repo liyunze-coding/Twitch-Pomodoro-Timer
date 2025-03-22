@@ -1,4 +1,4 @@
-# Pomodoro Twitch widget 
+# Pomodoro Twitch widget (WIP)
 
 ![Pomodoro Widget](./images/image.png)
 
@@ -44,9 +44,9 @@ Features:
 
 ## Instructions
 
-VIDEO: https://youtu.be/nX4ib4bxubc
+Coming soon
 
-1. Install the Widget
+<!-- 1. Install the Widget
    - Option 1:
      - Click on the green Code button
      - Download Zip
@@ -54,37 +54,16 @@ VIDEO: https://youtu.be/nX4ib4bxubc
    - Option 2:
      - `git clone https://github.com/liyunze-coding/Twitch-Pomodoro-Timer.git`
 
-2. Create a Twitch Application
-     - https://dev.twitch.tv/console
-     - Create a new application
-       - Name (required)
-       - OAuth Redirect URL(s): `http://localhost`
-       - Category: `Chat Bot`
-       - Client Type: `Public`
-     - Manage the new application
-     - Obtain Client ID
+2. 
 
-3. Modify details in `credentials.js`:
-
-```js
-const credentials = {
-	clientId: "CLIENT_ID_HERE",
-	scopes: "chat:read chat:edit channel:read:redemptions user:read:email",
-	channel: ["your streaming channel","other streaming channels if needed"], // your main channel
-	sender: "your bot username / streaming channel username", // bot username
-};
-
-export default credentials;
-```
-
-4. New Browser source
+3. New Browser source
   - Open OBS
   - Add a new Browser Source
   - Checked `Local File`
   - Select the `index.html` file of this project
   - You should see a pop up (modal) that ask you to authorize
 
-5. Authorization
+4. Authorization
   - Select the browser source and Interact
   - If client ID is missing, refer to step 2-3
   - You should see activation link
@@ -95,8 +74,8 @@ export default credentials;
     - Whichever account you authorize with is the account that will send chat messages
   - Interact with browser widget, click on blue button `Click here after authorizing`
 
-6. Customize styles in `style.css` file yourself.
-  - You can replace `style.css` content with `style_rectangle.css` to have a rectangular pomodoro widget
+5. Customize styles in `style.css` file yourself.
+  - You can replace `style.css` content with `style_rectangle.css` to have a rectangular pomodoro widget -->
 
 ## Additional sound credits
 
