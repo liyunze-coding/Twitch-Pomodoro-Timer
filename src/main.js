@@ -2,7 +2,12 @@ import Pomodoro from "./timer.js";
 import configs from "../configs.js";
 import chatHandler from "./chatHandler.js";
 
-const bot = new chatHandler(configs.chatBotSettings);
+const SBClient = new StreamerbotClient({
+	host: configs.StreamerBotWS.host,
+	port: configs.StreamerBotWS.port,
+	endpoint: configs.StreamerBotWS.endpoint,
+});
+const bot = new chatHandler(configs.chatBotSettings, SBClient);
 
 const pomodoro = new Pomodoro(
 	configs.settings,
@@ -18,7 +23,7 @@ const responses = configs.responses;
 
 function processResponse(status, messageID) {
 	if (status.body.message) {
-		bot.say(status.body.message, messageID);
+		bot.say(status.body.message);
 	}
 }
 
@@ -81,13 +86,17 @@ function processCommand(command, message, messageID, flags) {
 			status = pomodoro.setTime(time);
 		} else if (message === "pause") {
 			// !timer pause
-			status = pomodoro.pause();
+			status = pomodoro.pause(true);
 		} else if (message === "resume") {
 			// !timer resume
-			status = pomodoro.resume();
-		} else if (message === "reset" || message === "clear") {
+			status = pomodoro.pause(false);
+		} else if (
+			message === "reset" ||
+			message === "clear" ||
+			message === "finish"
+		) {
 			// !timer reset
-			status = pomodoro.reset();
+			status = pomodoro.finishTimer();
 		} else if (message === "skip") {
 			// !timer skip
 			status = pomodoro.skip();
@@ -159,6 +168,52 @@ function processCommand(command, message, messageID, flags) {
 	}
 }
 
-ComfyJS.onCommand = (user, command, message, flags, extra) => {
-	processCommand(command, message, extra.id, flags);
-};
+// ComfyJS.onCommand = (user, command, message, flags, extra) => {
+// 	processCommand(command, message, extra.id, flags);
+// };
+
+setTimeout(() => {
+	pomodoro.startTimer();
+}, 3000);
+
+SBClient.on("Twitch.ChatMessage", (data) => {
+	const payload = data.data;
+
+	let command = payload.message.message.split(" ")[0];
+
+	// remove !
+	if (command.startsWith("!")) {
+		command = command.slice(1);
+	} else {
+		return;
+	}
+
+	// const user = payload.message.displayName;
+
+	const message = payload.message.message.split(" ").slice(1).join(" ");
+	const messageID = payload.messageId;
+
+	// iterate through payload.message.badges
+	// each iteration has name in an object
+	// if name is "moderator" or "broadcaster", set flags.mod or flags.broadcaster to true
+	const badges = payload.message.badges;
+
+	const flags = {
+		broadcaster: false,
+		mod: false,
+	};
+
+	badges.forEach((badge) => {
+		if (badge.name === "broadcaster") {
+			flags.broadcaster = true;
+		} else if (badge.name === "moderator") {
+			flags.mod = true;
+		}
+	});
+
+	// console.log(payload);
+
+	// console.log("processing", command, message, messageID, flags);
+
+	processCommand(command, message, messageID, flags);
+});

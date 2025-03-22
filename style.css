@@ -1,40 +1,38 @@
 @import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
 
-/* EDIT THIS FILE FOR STYLE CHANGES */
-
 :root {
 	/* width and height of timer container */
-	--height: 250px;
-	--width: 250px;
+	--height: 150px;
+	--width: 373px;
 
 	/* container */
-	--background-color: rgba(0, 0, 0, 0.5);
-	--background-roundness: 100%;
-	--container-padding-x: 10px;
+	--background-color: rgba(0, 0, 0, 0.2);
+	--background-roundness: 0;
+	--container-padding-x: 0px;
 
 	/* flexbox direction */
-	--direction: column;
+	--direction: row;
 
 	/* text properties */
 	--text-color: white;
 	--font-family: "Poppins";
 
 	/* font sizes */
-	--label-font-size: 30px;
-	--time-font-size: 55px;
-	--pomo-font-size: 30px;
-
-	/* time (00:00) */
-	--time-space-above: 0px;
-	--time-space-left: auto;
+	--label-font-size: 24px;
+	--time-font-size: 64px;
+	--pomo-font-size: 24px;
 
 	/* label (Work, Break) */
-	--label-space-above: 0px;
-	--label-space-left: auto;
+	--label-space-above: 115px;
+	--label-space-left: 0;
+
+	/* time (00:00) */
+	--time-space-above: -10px;
+	--time-space-left: auto;
 
 	/* cycle counter: Pomo 0/3 */
-	--cycle-space-above: 100px;
-	--cycle-space-right: auto;
+	--cycle-space-above: 115px;
+	--cycle-space-right: 0;
 
 	/* text outline */
 	--text-outline-color: "none";

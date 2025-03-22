@@ -1,9 +1,10 @@
-class chatHandler {
-	constructor(chatBotSettings) {
+export default class chatHandler {
+	constructor(chatBotSettings, SBClient) {
 		this.settings = chatBotSettings;
+		this.SBClient = SBClient;
 	}
 
-	say(message, parentID) {
+	async say(message, messageID = null) {
 		if (message == null) {
 			throw new Error("Message cannot be null");
 		}
@@ -12,12 +13,8 @@ class chatHandler {
 			message = `/me ${message}`;
 		}
 
-		if (!this.settings.replyToMessage || parentID == null) {
-			ComfyJS.Say(message);
-		} else {
-			ComfyJS.Reply(parentID, message);
-		}
+		await this.SBClient.doAction("796ecdc6-99a5-4144-a208-ed7bd46cb635", {
+			message: message,
+		});
 	}
 }
-
-export default chatHandler;

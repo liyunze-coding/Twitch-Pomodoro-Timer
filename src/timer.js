@@ -1,7 +1,6 @@
 import OBSHandler from "./OBS.js";
 import discordMessage from "./discordWebhook.js";
 import controller from "./controller.js";
-import credentials from "../credentials.js";
 
 function response(status, message) {
 	return {
@@ -44,6 +43,12 @@ class Pomodoro {
 		this.breakTime = settings.breakTime; // seconds of break time
 		this.longBreakTime = settings.longBreakTime;
 
+		this.workLabel = settings.workLabel; // label for work time
+		this.breakLabel = settings.breakLabel; // label for break time
+		this.longBreakLabel = settings.longBreakLabel; // label for long break time
+		this.finishedLabel = settings.finishedLabel; // label for finished time
+		this.startLabel = settings.startLabel; // label for start time
+
 		this.settings = settings; // other settings (constant)
 		this.responses = responses;
 		this.obs = obs;
@@ -64,20 +69,56 @@ class Pomodoro {
 
 		this.label = settings.workLabel;
 
+		this.obsHandler = null; // OBS handler
+
 		if (this.obs.changeScenes) {
 			this.obsHandler = new OBSHandler(obs);
-			this.obsHandler.connect();
 		}
+
+		this.updateTimer = this.updateTimer.bind(this);
 
 		this.updateDisplay();
 	}
 
 	sendMessage(message) {
-		message = message.replace("{channel}", `${credentials.channel}`);
+		if (!message) {
+			return;
+		}
+
+		message = message.replace("{channel}", `${this.settings.channel}`);
 
 		this.bot.say(message);
 	}
 
+	playAd() {
+		this.sendMessage(this.ads.command);
+	}
+
+	startTimer() {
+		if (this.isRunning && !isStarting) {
+			this.bot.say(this.responses.timerRunning);
+			return;
+		}
+
+		this.time = this.workTime;
+		this.cycle = 0;
+		this.isStarting = true;
+		this.isRunning = true;
+
+		this.controller.updateLabel(this.workLabel);
+
+		// this.sendMessage(this.responses.workMsg);
+
+		this.changeScene(this.obs.sceneWork);
+
+		this.cycle++;
+		this.updateDisplay();
+		this.controller.playWorkSound();
+
+		this.timer();
+	}
+
+	// update timer display
 	updateTimer() {
 		// seconds to 00:00 format
 		let timeString = formatTime(
@@ -104,318 +145,171 @@ class Pomodoro {
 		this.controller.updateLabel(this.label);
 	}
 
-	async _breaktime() {
-		this.timerState = "break";
-		this.label = this.settings.breakLabel;
-		this.time = this.breakTime;
-		this.controller.playBreakSound();
+	timer() {
+		this.updateTimer();
 
-		// OBS change scenes
-		if (this.obs.changeScenes) {
-			let currentScene = await this.obsHandler.getScene();
-			if (!this.obs.dontChangeOnScenes.includes(currentScene)) {
-				this.obsHandler.changeScene(this.obs.sceneBreak);
-			}
+		if (this.isPaused && this.isRunning) {
+			console.log("here for some reason");
+			setTimeout(() => this.timer(), 1000);
+			return;
 		}
 
-		// Discord notification
-		if (this.discord.sendDiscord) {
-			let message = this.discord.content;
-			message = message.replace("{role}", `<@&${this.discord.roleID}>`);
+		this.time--;
 
-			discordMessage(this.discord.webHookURL, message);
-		}
-
-		if (this.messages.sendMessages) {
-			for (let i = 0; i < this.messages.onBreakTimeStart.length; i++) {
-				this.sendMessage(this.messages.onBreakTimeStart[i]);
-			}
-		}
-
-		this.updateDisplay();
-	}
-
-	async _longbreaktime() {
-		this.timerState = "long break";
-		this.label = this.settings.longBreakLabel;
-		this.time = this.longBreakTime;
-
-		this.controller.playLongBreakSound();
-
-		// OBS change scenes
-		if (this.obs.changeScenes) {
-			let currentScene = await this.obsHandler.getScene();
-			if (!this.obs.dontChangeOnScenes.includes(currentScene)) {
-				this.obsHandler.changeScene(this.obs.sceneBreak);
-			}
-		}
-
-		// Discord notification
-		if (this.discord.sendDiscord) {
-			let message = this.discord.content;
-			message = message.replace("{role}", `<@&${this.discord.roleID}>`);
-
-			discordMessage(this.discord.webHookURL, message);
-		}
-
-		if (this.messages.sendMessages) {
-			for (let i = 0; i < this.messages.onBreakTimeStart.length; i++) {
-				this.sendMessage(this.messages.onBreakTimeStart[i]);
-			}
-		}
-	}
-
-	async _worktime() {
-		this.timerState = "work";
-		this.label = this.settings.workLabel;
-		this.time = this.workTime;
-
-		this.sendMessage(this.responses.workMsg);
-
-		this.controller.playWorkSound();
-
-		if (this.obs.changeScenes) {
-			let currentScene = await this.obsHandler.getScene();
-
-			if (!this.obs.dontChangeOnScenes.includes(currentScene)) {
-				this.obsHandler.changeScene(this.obs.sceneWork);
-			}
-		}
-
-		if (this.messages.sendMessages) {
-			for (let i = 0; i < this.messages.onWorkTimeStart.length; i++) {
-				this.sendMessage(this.messages.onWorkTimeStart[i]);
-			}
-		}
-	}
-
-	async finishTimer() {
-		if (!this.isRunning) {
-			return response(400, this.responses.notRunning);
-		}
-
-		this.controller.playBreakSound();
-
-		this.cycle = this.goal;
-
-		this.timerState = "finished";
-		this.label = this.settings.finishLabel;
-		this.isRunning = false;
-		this.stop();
-
-		// OBS change scenes
-		if (this.obs.changeScenes) {
-			let currentScene = await this.obsHandler.getScene();
-			if (!this.obs.dontChangeOnScenes.includes(currentScene)) {
-				this.obsHandler.changeScene(this.obs.sceneOver);
-			}
-		}
-
-		// Discord notification
-		if (this.discord.sendDiscord) {
-			let message = this.discord.content;
-			message = message.replace("{role}", `<@&${this.discord.roleID}>`);
-
-			discordMessage(this.discord.webHookURL, message);
-		}
-	}
-
-	_startTime() {
-		this.timerState = "start";
-		this.label = this.settings.startingLabel;
-		this.time = this.settings.startingTime;
-	}
-
-	// !start
-	streamStart() {
-		if (this.isRunning) {
-			return response(400, this.responses.timerRunning);
-		}
-
-		// this.isRunning = true;
-		// this.isRunning = true;
-		this.isStarting = true;
-		this._startTime();
-
-		let status = this.startTimer();
-
-		if (status.status === 200) {
-			return response(200, this.responses.streamStarting);
-		} else {
-			return status;
-		}
-	}
-
-	async handleStartTimeOver() {
-		await this._worktime();
-		this.reset();
-		this.updateDisplay();
-	}
-
-	async handleWorkTimeOver() {
-		// 1: cycle is up, 2: long break 3: break
-		if (
-			(this.cycle === this.goal && this.settings.noLastBreak) ||
-			this.cycle > this.goal
-		) {
-			await this.finishTimer();
-			this.updateDisplay();
-
-			this.sendMessage(this.responses.finishResponse);
-		} else if (this.cycle % (this.settings.longBreakEvery * 2) === 0) {
-			this.sendMessage(this.responses.longBreakMsg);
-
-			await this._longbreaktime();
-		} else {
-			this.sendMessage(this.responses.breakMsg);
-
-			await this._breaktime();
-		}
-	}
-
-	async handleBreakTimeOver() {
-		if (this.cycle >= this.goal) {
-			await this.finishTimer();
-			this.updateDisplay();
-			this.sendMessage(this.responses.finishResponse);
-		} else {
-			await this._worktime();
-		}
-	}
-
-	playAd() {
-		this.sendMessage(this.ads.command);
-	}
-
-	startTimer() {
-		if (this.isRunning) {
-			return response(400, this.responses.timerRunning);
-		}
-
-		this.isRunning = true;
-		this.cycle++;
-		this.updateDisplay();
-
-		if (this.timerState === "work") {
-			this._worktime();
-		} else if (this.timerState === "start") {
-			this._startTime();
-		}
-
-		// start timer
-		this.interval = setInterval(async () => {
-			this.updateTimer();
-			// if paused, do not decrement time
-			if (!this.isPaused) {
-				this.time--;
-			}
-
-			this.updateTimer();
-
-			// send message if work time reminder is enabled
+		if (this.time >= 0) {
+			// send work time remind / ads
 			if (
-				["break", "long break"].includes(this.timerState) &&
-				this.time === this.settings.workTimeRemind &&
-				this.settings.sendWorkTimeRemind
+				this.settings.sendWorkTimeRemind &&
+				this.isBreakTime() &&
+				this.time === this.settings.workTimeRemind
 			) {
-				this.sendMessage(this.responses.workRemindMsg);
-			}
-
-			// do !ads command (if enabled)
-			if (
+				this.bot.say(this.responses.workRemindMsg);
+			} else if (
+				this.isWorkTime() &&
 				this.ads.enabled &&
-				this.timerState === "work" &&
 				this.time === this.ads.timeBeforeBreakStarts
 			) {
 				this.playAd();
 			}
 
-			// if time is up
-			if (this.time <= 0) {
-				this.cycle++;
-				console.log(this.cycle, this.goal);
-				if (this.timerState === "start") {
-					// Starting time is up, work time paused.
-					await this.handleStartTimeOver();
-				} else if (this.timerState === "work") {
-					// Work time is up
-					await this.handleWorkTimeOver();
-				} else {
-					// break time is up
-					await this.handleBreakTimeOver();
-				}
-
-				this.updateDisplay();
+			setTimeout(() => this.timer(), 1000);
+			return;
+		} else {
+			if (this.cycle < this.goal && !this.settings.noLastBreak) {
+				this.updateTimerWithNextCycle();
+				this.timer();
+			} else if (
+				this.cycle < this.goal - 1 &&
+				this.settings.noLastBreak
+			) {
+				this.updateTimerWithNextCycle();
+				this.timer();
+			} else {
+				this.finishTimer();
 			}
-		}, 1000);
-
-		return response(200);
+		}
 	}
 
-	stop() {
-		clearInterval(this.interval);
+	finishTimer() {
 		this.isRunning = false;
-	}
-
-	pause() {
-		// if already paused, do nothing
-		// if not running, do nothing
-		if (this.isPaused || !this.isRunning) {
-			return response(400, this.responses.notRunning);
-		}
-
-		// pause timer
-		this.isPaused = true;
-		return response(200, this.responses.commandSuccess);
-	}
-
-	resume() {
-		if (!this.isPaused) {
-			return response(400, this.responses.timerRunning);
-		} else if (this.timerState === "finished") {
-			// Finished but want to resume:
-			// Goal incremented by 1, pomodoro resumed
-
-			// increment goal
-			this.timerState = "work";
-			this.goal++;
-			this._worktime();
-			this.startTimer();
-
-			return response(200);
-		}
-
 		this.isPaused = false;
-		return response(200, this.responses.commandSuccess);
+		this.cycle = 0;
+
+		this.controller.updateLabel(this.finishedLabel);
+		this.controller.playFinishSound();
+		this.changeScene(this.obs.sceneOver);
+
+		this.sendMessage(this.responses.finishMsg);
 	}
 
-	reset() {
+	isWorkTime() {
+		return this.cycle % 2;
+	}
+
+	isBreakTime() {
+		return !this.isWorkTime();
+	}
+
+	isLastBreak() {
+		// check if it's the last break
+		return this.cycle == this.goal;
+	}
+
+	isLongBreak() {
+		return !(this.cycle % (this.settings.longBreakEvery * 2));
+	}
+
+	pause(pause) {
 		if (!this.isRunning) {
-			return response(400, this.responses.notRunning);
+			this.bot.say(this.responses.timerNotRunning);
+			return;
 		}
-		this.time = this.settings.workTime;
-		this.cycle = 0;
-		this.stop();
-		this.updateDisplay();
+
+		this.isPaused = pause;
+		return true;
+	}
+
+	updateTimerWithNextCycle() {
+		this.cycle++;
+
+		if (this.isWorkTime()) {
+			this.time = this.settings.workTime;
+
+			this.label = this.workLabel;
+			this.timerState = "work";
+			this.controller.updateLabel(this.workLabel);
+			this.controller.playWorkSound();
+			this.changeScene(this.obs.sceneWork);
+
+			this.sendMessage(this.responses.workMsg);
+		} else {
+			if (this.isLongBreak()) {
+				this.time = this.longBreakTime;
+				this.label = this.longBreakLabel;
+				this.timerState = "longBreak";
+				this.controller.updateLabel(this.longBreakLabel);
+				this.controller.playLongBreakSound();
+				this.changeScene(this.obs.sceneBreak);
+
+				this.sendMessage(this.responses.longBreakMsg);
+			} else {
+				this.time = this.breakTime;
+				this.label = this.breakLabel;
+				this.timerState = "break";
+				this.controller.updateLabel(this.breakLabel);
+				this.controller.playBreakSound();
+				this.changeScene(this.obs.sceneBreak);
+
+				this.sendMessage(this.responses.breakMsg);
+			}
+
+			if (this.settings.noLastBreak && this.cycle === this.goal) {
+				this.finishTimer();
+			}
+
+			if (this.discord.sendDiscord) {
+				let message = this.responses.discordMessage.replace(
+					"{channel}",
+					`${this.settings.channel}`
+				);
+
+				discordMessage.sendDiscordMessage(
+					this.discord.webhookUrl,
+					message
+				);
+			}
+		}
 	}
 
 	skip() {
-		if (!this.isRunning || this.isPaused) {
-			return response(400, this.responses.notRunning);
+		if (this.isRunning) {
+			this.time = 1;
+		} else {
+			this.bot.say(this.responses.timerNotRunning);
 		}
+	}
 
-		this.time = 1; // skip to 00:01
-		this.updateDisplay();
+	changeScene(scene) {
+		if (this.obs.changeScenes) {
+			this.obsHandler.changeScene(scene);
+		}
 	}
 
 	setTime(time) {
-		if (isValidNum(time)) {
-			this.time = parseInt(time);
-			this.updateDisplay();
-			return response(200, this.responses.commandSuccess);
-		} else {
-			return response(400, this.responses.wrongCommand);
+		if (!this.isRunning) {
+			this.bot.say(this.responses.timerNotRunning);
+			return;
 		}
+
+		if (!isValidNum(time)) {
+			this.bot.say(this.responses.invalidTime);
+			return;
+		}
+
+		this.time = time;
+
+		this.updateDisplay();
+		return true;
 	}
 
 	getTime() {
@@ -424,77 +318,78 @@ class Pomodoro {
 
 	setCycle(cycle) {
 		if (!isValidNum(cycle)) {
-			return response(400, this.responses.cycleWrong);
+			this.bot.say(this.responses.invalidCycle);
+			return;
 		}
 
 		if (cycle > this.goal) {
-			return response(400, this.responses.cycleWrong);
+			this.bot.say(this.responses.cycleWrong);
+			return;
 		}
 
-		let remainder = this.cycle % 2;
-		this.cycle = cycle * 2 - remainder;
+		let newCycle = cycle * 2;
+
+		if (this.isWorkTime()) {
+			this.cycle = newCycle - 1;
+		} else {
+			this.cycle = newCycle;
+		}
 
 		this.updateDisplay();
-		return response(200, this.responses.commandSuccess);
-	}
-
-	getCycle() {
-		return this.cycle;
+		return true;
 	}
 
 	setGoal(goal) {
 		if (!isValidNum(goal)) {
-			return response(400, this.responses.goalWrong);
+			this.bot.say(this.responses.invalidGoal);
+			return;
 		}
-		if (goal * 2 < this.cycle) {
-			return response(400, this.responses.goalWrong);
+
+		if (goal < this.cycle) {
+			this.bot.say(this.responses.goalWrong);
+			return;
 		}
 
 		this.goal = goal * 2;
-		this.updateDisplay();
-		return response(200, this.responses.commandSuccess);
-	}
 
-	getGoal() {
-		return this.goal;
+		this.updateDisplay();
+		return true;
 	}
 
 	setWorkDuration(duration) {
 		if (!isValidNum(duration)) {
-			return response(400, this.responses.goalWrong);
+			this.bot.say(this.responses.invalidWorkTime);
+			return;
 		}
 
 		this.workTime = duration;
-		// if work timer hasn't started yet,
-		if (!this.isRunning || this.isStarting) {
-			this.time = duration;
-		}
 
 		this.updateDisplay();
-
-		return response(200, this.responses.commandSuccess);
+		return true;
 	}
 
 	setBreakDuration(duration) {
 		if (!isValidNum(duration)) {
-			return response(400, this.responses.goalWrong);
+			this.bot.say(this.responses.invalidBreakTime);
+			return;
 		}
 
 		this.breakTime = duration;
-		this.updateDisplay();
 
-		return response(200, this.responses.commandSuccess);
+		this.updateDisplay();
+		return true;
 	}
 
 	setLongBreakDuration(duration) {
 		if (!isValidNum(duration)) {
-			return response(400, this.responses.goalWrong);
+			this.bot.say(this.responses.invalidLongBreakTime);
+			return;
 		}
 
 		this.longBreakTime = duration;
-		this.updateDisplay();
 
-		return response(200, this.responses.commandSuccess);
+		this.updateDisplay();
+		return true;
 	}
 }
 
