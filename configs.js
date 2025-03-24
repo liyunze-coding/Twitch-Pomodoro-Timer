@@ -92,8 +92,7 @@ const configs = (function () {
 	// Discord notifications
 	const discord = {
 		sendDiscord: false, // true or false, true = sends discord ping when break starts
-		webHookURL:
-			"https://discord.com/api/webhooks/1101518991492665404/ln0K_g1IFtSHMeBFVh7EiPv_H5Ha1iv1D8ywh-Y6SGnZs8wwTPKnSXR6abd2CO8qnfgR", // make sure to keep the "" around the url
+		webHookURL: "", // make sure to keep the "" around the url
 		roleID: "1052576825504698388", // role id to ping, can be obtained by right clicking on the role (ensure to have developer mode on)
 		content: "Stream is going on break! {role}", // message to send
 	};
